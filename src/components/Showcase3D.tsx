@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Box, Sphere, Torus, Html } from '@react-three/drei';
+import { OrbitControls, Box, Sphere, Torus } from '@react-three/drei';
+import { Mesh } from 'three';
 
-// Простой вращающийся куб (без сложных вычислений)
+// Простой вращающийся куб
 const SimpleCube = () => {
-  const meshRef = useRef();
+  const meshRef = useRef<Mesh>(null!);
   
   useFrame(() => {
     if (meshRef.current) {
@@ -22,7 +23,7 @@ const SimpleCube = () => {
 
 // Простая сфера
 const SimpleSphere = () => {
-  const meshRef = useRef();
+  const meshRef = useRef<Mesh>(null!);
   
   useFrame(() => {
     if (meshRef.current) {
@@ -40,7 +41,7 @@ const SimpleSphere = () => {
 
 // Вращающийся тор
 const SimpleTorus = () => {
-  const meshRef = useRef();
+  const meshRef = useRef<Mesh>(null!);
   
   useFrame((state) => {
     if (meshRef.current) {
@@ -152,9 +153,9 @@ const Showcase3D = () => {
           console.error('WebGL Error:', error);
           setHasError(true);
         }}
-        onCreated={({ gl }) => {
-          console.log('WebGL успешно инициализирован');
-        }}
+        onCreated={(_) => {
+  console.log('WebGL успешно инициализирован');
+}}
       >
         <Scene3D />
       </Canvas>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Showcase3D from './components/Showcase3D';
 
@@ -113,7 +113,7 @@ function App() {
         </div>
       </footer>
 
-      <style jsx>{`
+      <style>{`
         .hover-scale {
           transition: transform 0.3s ease;
         }
