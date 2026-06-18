@@ -1,14 +1,14 @@
-import PlywoodViewer from './components/PlywoodViewer'
+import React from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import ColorSelector from './components/ColorSelector';
+import './App.css';
 
-export default function App() {
+const App: React.FC = () => {
   return (
-    <div
-      className="vh-100"
-      style={{
-        background: '#111'
-      }}
-    >
-      <PlywoodViewer />
+    <div className="App">
+      <ColorSelector />
     </div>
-  )
-}
+  );
+};
+
+export default App;

@@ -1,141 +1,24 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+.App {
+  min-height: 100vh;
+  background: #f0ebe3;
 }
 
-html, body, #root {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-}
-
-.app-container {
-  height: 100vh;
-  width: 100vw;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  overflow: hidden;
-}
-
-.viewer-container {
-  padding: 20px;
-  height: 100vh;
-}
-
-.viewer-card {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  backdrop-filter: blur(10px);
-  padding: 20px;
-  height: calc(100vh - 40px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-}
-
-.form-container {
-  padding: 20px;
-  height: 100vh;
-  overflow-y: auto;
-}
-
-.form-card {
-  background: white;
-  border-radius: 16px;
-  padding: 30px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  min-height: calc(100vh - 40px);
-}
-
-.form-card h3 {
-  color: #333;
-  font-weight: 600;
-  border-bottom: 3px solid #667eea;
-  padding-bottom: 10px;
-  display: inline-block;
-}
-
-.preset-colors {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.preset-color-btn {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  border: 3px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.preset-color-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.preset-color-btn.active {
-  border-color: #667eea;
-  transform: scale(1.1);
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-}
-
-.form-control:focus, .form-select:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-}
-
-/* Стилизация скроллбара */
-.form-container::-webkit-scrollbar {
+/* Стили для скролла */
+::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
-.form-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
+::-webkit-scrollbar-track {
+  background: #e8e0d8;
+  border-radius: 4px;
 }
 
-.form-container::-webkit-scrollbar-thumb {
-  background: #667eea;
-  border-radius: 10px;
+::-webkit-scrollbar-thumb {
+  background: #c4b5a5;
+  border-radius: 4px;
 }
 
-.form-container::-webkit-scrollbar-thumb:hover {
-  background: #764ba2;
+::-webkit-scrollbar-thumb:hover {
+  background: #a89585;
 }
-
-/* Адаптивность */
-@media (max-width: 768px) {
-  .viewer-container, .form-container {
-    height: auto;
-  }
-  
-  .viewer-container {
-    height: 50vh;
-  }
-  
-  .form-container {
-    height: auto;
-  }
-  
-  .app-container {
-    overflow-y: auto;
-  }
-}
-
-/* Bootstrap иконки (опционально) */
-@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css");

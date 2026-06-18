@@ -1,194 +1,186 @@
-import { useMemo, useState } from 'react'
-import { Canvas } from '@react-three/fiber'
-import {
-  OrbitControls,
-  Environment,
-  useTexture
-} from '@react-three/drei'
+import React, { useRef, useEffect, useState } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, Environment } from '@react-three/drei';
+import * as THREE from 'three';
 
-import * as THREE from 'three'
-
-import plywoodBase from '../assets/plywood_base.jpg'
-import plywoodNormal from '../assets/plywood_normal.jpg'
-import plywoodRoughness from '../assets/plywood_roughness.jpg'
-
-type PlywoodProps = {
-  color: string
+interface PlywoodViewerProps {
+  primaryColor: string;
 }
 
-function Plywood({ color }: PlywoodProps) {
-  const [
-    baseTexture,
-    normalTexture,
-    roughnessTexture
-  ] = useTexture([
-    plywoodBase,
-    plywoodNormal,
-    plywoodRoughness
-  ])
+// Компонент фанеры
+const Plywood: React.FC<{ color: string }> = ({ color }) => {
+  const groupRef = useRef<THREE.Group>(null);
+  
+  // Создание текстуры дерева
+  const createWoodTexture = (baseColor: string) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) return null;
 
-  useMemo(() => {
-    baseTexture.wrapS = THREE.RepeatWrapping
-    baseTexture.wrapT = THREE.RepeatWrapping
-    baseTexture.repeat.set(2, 2)
+    const colorObj = new THREE.Color(baseColor);
+    ctx.fillStyle = `rgb(${colorObj.r * 255}, ${colorObj.g * 255}, ${colorObj.b * 255})`;
+    ctx.fillRect(0, 0, 512, 512);
 
-    normalTexture.wrapS = THREE.RepeatWrapping
-    normalTexture.wrapT = THREE.RepeatWrapping
+    // Рисуем линии текстуры
+    const lines = 30 + Math.random() * 20;
+    for (let i = 0; i < lines; i++) {
+      const y = Math.random() * 512;
+      const width = 1 + Math.random() * 3;
+      const alpha = 0.1 + Math.random() * 0.3;
+      
+      const darken = 0.4;
+      const r = colorObj.r * (1 - darken * (0.3 + Math.random() * 0.3));
+      const g = colorObj.g * (1 - darken * (0.3 + Math.random() * 0.3));
+      const b = colorObj.b * (1 - darken * (0.3 + Math.random() * 0.3));
+      
+      ctx.strokeStyle = `rgba(${r * 255}, ${g * 255}, ${b * 255}, ${alpha})`;
+      ctx.lineWidth = width;
+      
+      ctx.beginPath();
+      let x = 0;
+      while (x < 512) {
+        const yOffset = Math.sin(x * 0.01 + i) * 20 + Math.sin(x * 0.005 + i * 2) * 30;
+        if (x === 0) {
+          ctx.moveTo(x, y + yOffset);
+        } else {
+          ctx.lineTo(x, y + yOffset);
+        }
+        x += 2;
+      }
+      ctx.stroke();
+    }
 
-    roughnessTexture.wrapS = THREE.RepeatWrapping
-    roughnessTexture.wrapT = THREE.RepeatWrapping
-  }, [
-    baseTexture,
-    normalTexture,
-    roughnessTexture
-  ])
+    // Сучки
+    for (let i = 0; i < 5 + Math.random() * 5; i++) {
+      const x = Math.random() * 512;
+      const y = Math.random() * 512;
+      const radius = 10 + Math.random() * 30;
+      
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      gradient.addColorStop(0, `rgba(0,0,0,${0.1 + Math.random() * 0.2})`);
+      gradient.addColorStop(1, `rgba(0,0,0,0)`);
+      
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.ellipse(x, y, radius, radius * (0.5 + Math.random()), 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
-  const woodMaterial =
-    new THREE.MeshPhysicalMaterial({
-      map: baseTexture,
-      normalMap: normalTexture,
-      roughnessMap: roughnessTexture,
-      roughness: 0.85,
-      clearcoat: 0.2
-    })
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(1.5, 1.5);
+    return texture;
+  };
 
-  const paintedMaterial =
-    new THREE.MeshPhysicalMaterial({
-      map: baseTexture,
-      color: color,
-      normalMap: normalTexture,
-      roughnessMap: roughnessTexture,
-      roughness: 0.45,
-      clearcoat: 1,
-      clearcoatRoughness: 0.05
-    })
-
-  const materials = [
-    woodMaterial,
-    woodMaterial,
-    paintedMaterial,
-    woodMaterial,
-    woodMaterial,
-    woodMaterial
-  ]
-
-  return (
-    <mesh material={materials}>
-      <boxGeometry args={[4, 2.5, 0.18]} />
-    </mesh>
-  )
-}
-
-export default function PlywoodViewer() {
-  const [color, setColor] =
-    useState('#2196f3')
-
-  const colors = [
-    '#ff0000',
-    '#00ff00',
-    '#0000ff',
-    '#ffffff',
-    '#000000',
-    '#ffd700',
-    '#8b4513'
-  ]
+  // Создаем текстуру при изменении цвета
+  const texture = React.useMemo(() => {
+    return createWoodTexture(color);
+  }, [color]);
 
   return (
-    <div className="row h-100">
+    <group ref={groupRef} position={[0, 0, 0]}>
+      {/* Только одна фанера */}
+      <mesh castShadow receiveShadow position={[0, 0, 0]}>
+        <boxGeometry args={[3, 0.08, 2]} />
+        <meshStandardMaterial
+          map={texture || undefined}
+          color={texture ? 0xffffff : color}
+          roughness={0.5}
+          metalness={0.05}
+        />
+      </mesh>
+    </group>
+  );
+};
 
-      <div
-        className="col-3 bg-light p-4"
-        style={{
-          overflowY: 'auto'
+// Основной компонент
+const PlywoodViewer: React.FC<PlywoodViewerProps> = ({ primaryColor }) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div 
+        style={{ 
+          width: '100%', 
+          height: '100%', 
+          minHeight: '500px',
+          backgroundColor: '#1a1410',
+          borderRadius: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#888'
         }}
       >
-        <h4>Покраска фанеры</h4>
+        Загрузка 3D сцены...
+      </div>
+    );
+  }
 
-        <label className="form-label">
-          Цвет
-        </label>
-
-        <input
-          type="color"
-          className="form-control form-control-color"
-          value={color}
-          onChange={(e) =>
-            setColor(e.target.value)
-          }
+  return (
+    <div 
+      style={{ 
+        width: '100%', 
+        height: '100%', 
+        minHeight: '500px',
+        backgroundColor: '#1a1410',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        position: 'relative'
+      }}
+    >
+      <Canvas
+        camera={{ position: [3.5, 2.5, 3.5], fov: 45 }}
+        shadows
+        gl={{ 
+          antialias: true,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.2
+        }}
+      >
+        {/* Орбит контролы - полное вращение на 360 градусов */}
+        <OrbitControls
+          enableDamping={true}
+          dampingFactor={0.08}
+          enablePan={false}
+          enableZoom={true}
+          zoomSpeed={1.0}
+          rotateSpeed={0.8}
+          minDistance={1.5}
+          maxDistance={20}
+          target={[0, 0, 0]}
+          makeDefault
         />
-
-        <div className="mt-4">
-          <div className="mb-2">
-            Быстрые цвета
-          </div>
-
-          <div className="d-flex flex-wrap gap-2">
-            {colors.map((c) => (
-              <button
-                key={c}
-                onClick={() =>
-                  setColor(c)
-                }
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 4,
-                  border:
-                    '1px solid #999',
-                  background: c
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="col-9 p-0">
-        <Canvas
-          shadows
-          camera={{
-            position: [0, 0, 6],
-            fov: 45
-          }}
-        >
-          <color
-            attach="background"
-            args={['#111111']}
-          />
-
-          <ambientLight
-            intensity={0.5}
-          />
-
-          <directionalLight
-            position={[10, 10, 5]}
-            intensity={3}
-            castShadow
-          />
-
-          <directionalLight
-            position={[-10, 5, -5]}
-            intensity={1.5}
-          />
-
-          <spotLight
-            position={[0, 8, 5]}
-            intensity={2}
-            angle={0.4}
-          />
-
-          <Environment preset="city" />
-
-          <Plywood color={color} />
-
-          <OrbitControls
-            enablePan={false}
-            enableZoom
-            minDistance={3}
-            maxDistance={12}
-          />
-        </Canvas>
-      </div>
+        
+        {/* Минимальное освещение */}
+        <ambientLight intensity={0.5} color="#ffffff" />
+        <directionalLight
+          position={[5, 10, 7]}
+          intensity={1.0}
+          color="#ffffff"
+          castShadow
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+        />
+        <directionalLight position={[-5, 0, 5]} intensity={0.3} color="#ffffff" />
+        <directionalLight position={[0, 0, -5]} intensity={0.2} color="#ffffff" />
+        
+        {/* Окружение */}
+        <Environment preset="studio" />
+        
+        {/* Только фанера */}
+        <Plywood color={primaryColor} />
+      </Canvas>
     </div>
-  )
-}
+  );
+};
+
+export default PlywoodViewer;
