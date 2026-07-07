@@ -4,15 +4,20 @@ import { OrbitControls, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface PlywoodViewerProps {
-  primaryColor: string;
+  topColor: string;
+  edgeColor: string;
 }
 
-// Компонент фанеры
-const Plywood: React.FC<{ color: string }> = ({ color }) => {
+// Компонент ДСП
+const Chipboard: React.FC<PlywoodViewerProps> = ({ topColor, edgeColor }) => {
   const groupRef = useRef<THREE.Group>(null);
   
-  // Создание текстуры дерева
-  const createWoodTexture = (baseColor: string) => {
+  const width = 1.375;
+  const height = 0.915;
+  const thickness = 0.016;
+
+  // Создание текстуры для ДСП (низ)
+  const createChipboardTexture = () => {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
@@ -20,85 +25,89 @@ const Plywood: React.FC<{ color: string }> = ({ color }) => {
     
     if (!ctx) return null;
 
+    const baseColor = '#8B7D6B';
     const colorObj = new THREE.Color(baseColor);
+    
     ctx.fillStyle = `rgb(${colorObj.r * 255}, ${colorObj.g * 255}, ${colorObj.b * 255})`;
-    ctx.fillRect(0, 0, 512, 512);
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Рисуем линии текстуры
-    const lines = 30 + Math.random() * 20;
-    for (let i = 0; i < lines; i++) {
-      const y = Math.random() * 512;
-      const width = 1 + Math.random() * 3;
-      const alpha = 0.1 + Math.random() * 0.3;
+    for (let i = 0; i < 300; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const chipWidth = 1 + Math.random() * 5;
+      const chipHeight = 0.5 + Math.random() * 3;
+      const angle = Math.random() * Math.PI * 2;
       
-      const darken = 0.4;
-      const r = colorObj.r * (1 - darken * (0.3 + Math.random() * 0.3));
-      const g = colorObj.g * (1 - darken * (0.3 + Math.random() * 0.3));
-      const b = colorObj.b * (1 - darken * (0.3 + Math.random() * 0.3));
+      const darken = 0.2 + Math.random() * 0.3;
+      const r = colorObj.r * (1 - darken * (0.2 + Math.random() * 0.2));
+      const g = colorObj.g * (1 - darken * (0.2 + Math.random() * 0.2));
+      const b = colorObj.b * (1 - darken * (0.2 + Math.random() * 0.2));
       
-      ctx.strokeStyle = `rgba(${r * 255}, ${g * 255}, ${b * 255}, ${alpha})`;
-      ctx.lineWidth = width;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
       
+      ctx.fillStyle = `rgba(${r * 255}, ${g * 255}, ${b * 255}, ${0.3 + Math.random() * 0.3})`;
       ctx.beginPath();
-      let x = 0;
-      while (x < 512) {
-        const yOffset = Math.sin(x * 0.01 + i) * 20 + Math.sin(x * 0.005 + i * 2) * 30;
-        if (x === 0) {
-          ctx.moveTo(x, y + yOffset);
-        } else {
-          ctx.lineTo(x, y + yOffset);
-        }
-        x += 2;
-      }
-      ctx.stroke();
-    }
-
-    // Сучки
-    for (let i = 0; i < 5 + Math.random() * 5; i++) {
-      const x = Math.random() * 512;
-      const y = Math.random() * 512;
-      const radius = 10 + Math.random() * 30;
-      
-      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-      gradient.addColorStop(0, `rgba(0,0,0,${0.1 + Math.random() * 0.2})`);
-      gradient.addColorStop(1, `rgba(0,0,0,0)`);
-      
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.ellipse(x, y, radius, radius * (0.5 + Math.random()), 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, chipWidth / 2, chipHeight / 2, 0, 0, Math.PI * 2);
       ctx.fill();
+      
+      ctx.restore();
     }
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1.5, 1.5);
+    texture.repeat.set(1, 1);
     return texture;
   };
 
-  // Создаем текстуру при изменении цвета
-  const texture = React.useMemo(() => {
-    return createWoodTexture(color);
-  }, [color]);
+  const chipboardTexture = React.useMemo(() => createChipboardTexture(), []);
+
+  // Создаем материалы
+  const topMaterial = new THREE.MeshStandardMaterial({
+    color: topColor,
+    roughness: 0.4,
+    metalness: 0.02,
+  });
+
+  const bottomMaterial = new THREE.MeshStandardMaterial({
+    map: chipboardTexture || undefined,
+    color: chipboardTexture ? 0xffffff : '#8B7D6B',
+    roughness: 0.8,
+    metalness: 0.02,
+  });
+
+  const edgeMaterial = new THREE.MeshStandardMaterial({
+    color: edgeColor,
+    roughness: 0.5,
+    metalness: 0.02,
+  });
+
+  // Материалы для 6 сторон куба: [+x, -x, +y, -y, +z, -z]
+  const materials = [
+    edgeMaterial,   // право (+x) - боковина
+    edgeMaterial,   // лево (-x) - боковина
+    topMaterial,    // верх (+y) - верх
+    bottomMaterial, // низ (-y) - низ
+    edgeMaterial,   // перед (+z) - боковина
+    edgeMaterial,   // зад (-z) - боковина
+  ];
 
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
-      {/* Только одна фанера */}
       <mesh castShadow receiveShadow position={[0, 0, 0]}>
-        <boxGeometry args={[3, 0.08, 2]} />
-        <meshStandardMaterial
-          map={texture || undefined}
-          color={texture ? 0xffffff : color}
-          roughness={0.5}
-          metalness={0.05}
-        />
+        <boxGeometry args={[width, thickness, height]} />
+        {materials.map((mat, i) => (
+          <primitive key={i} object={mat} attach={`material-${i}`} />
+        ))}
       </mesh>
     </group>
   );
 };
 
 // Основной компонент
-const PlywoodViewer: React.FC<PlywoodViewerProps> = ({ primaryColor }) => {
+const PlywoodViewer: React.FC<PlywoodViewerProps> = ({ topColor, edgeColor }) => {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -125,6 +134,11 @@ const PlywoodViewer: React.FC<PlywoodViewerProps> = ({ primaryColor }) => {
     );
   }
 
+  const width = 1.375;
+  const height = 0.915;
+  const maxDim = Math.max(width, height);
+  const cameraDistance = maxDim * 3.5;
+
   return (
     <div 
       style={{ 
@@ -138,7 +152,10 @@ const PlywoodViewer: React.FC<PlywoodViewerProps> = ({ primaryColor }) => {
       }}
     >
       <Canvas
-        camera={{ position: [3.5, 2.5, 3.5], fov: 45 }}
+        camera={{ 
+          position: [cameraDistance * 0.7, cameraDistance * 0.5, cameraDistance * 0.7], 
+          fov: 45 
+        }}
         shadows
         gl={{ 
           antialias: true,
@@ -146,7 +163,6 @@ const PlywoodViewer: React.FC<PlywoodViewerProps> = ({ primaryColor }) => {
           toneMappingExposure: 1.2
         }}
       >
-        {/* Орбит контролы - полное вращение на 360 градусов */}
         <OrbitControls
           enableDamping={true}
           dampingFactor={0.08}
@@ -154,13 +170,12 @@ const PlywoodViewer: React.FC<PlywoodViewerProps> = ({ primaryColor }) => {
           enableZoom={true}
           zoomSpeed={1.0}
           rotateSpeed={0.8}
-          minDistance={1.5}
-          maxDistance={20}
+          minDistance={maxDim * 1.5}
+          maxDistance={maxDim * 8}
           target={[0, 0, 0]}
           makeDefault
         />
         
-        {/* Минимальное освещение */}
         <ambientLight intensity={0.5} color="#ffffff" />
         <directionalLight
           position={[5, 10, 7]}
@@ -173,11 +188,14 @@ const PlywoodViewer: React.FC<PlywoodViewerProps> = ({ primaryColor }) => {
         <directionalLight position={[-5, 0, 5]} intensity={0.3} color="#ffffff" />
         <directionalLight position={[0, 0, -5]} intensity={0.2} color="#ffffff" />
         
-        {/* Окружение */}
         <Environment preset="studio" />
         
-        {/* Только фанера */}
-        <Plywood color={primaryColor} />
+        <Chipboard topColor={topColor} edgeColor={edgeColor} />
+        
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
+          <planeGeometry args={[width * 1.5, height * 1.5]} />
+          <shadowMaterial opacity={0.3} />
+        </mesh>
       </Canvas>
     </div>
   );
