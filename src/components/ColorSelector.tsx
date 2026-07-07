@@ -3,9 +3,33 @@ import { Container, Row, Col, Form, Button, Card } from 'react-bootstrap';
 import PlywoodViewer from './PlywoodViewer';
 import './ColorSelector.css';
 
+// Интерфейс для декора с фото
+interface Decor {
+  id: string;
+  name: string;
+  image: string;
+  thumbnail?: string;
+}
+
+// Предустановленные декоры с фото
+const DECORS: Decor[] = [
+  { 
+    id: 'oak', 
+    name: 'Дуб', 
+    image: './images/D600.jpg',
+    thumbnail: './images/D600.jpg'
+  },{ 
+    id: 'veneto', 
+    name: 'ВЕНЕТО', 
+    image: './images/veneto_.jpg',
+    thumbnail: './images/veneto_.jpg'
+  },
+];
+
 const ColorSelector: React.FC = () => {
   const [topColor, setTopColor] = useState<string>('#D4A574');
   const [edgeColor, setEdgeColor] = useState<string>('#8B7D6B');
+  const [selectedDecor, setSelectedDecor] = useState<Decor | null>(null);
 
   const woodColors = [
     { name: 'Сосна', value: '#E8D5B7' },
@@ -28,7 +52,6 @@ const ColorSelector: React.FC = () => {
     { name: 'Черный', value: '#2C2C2C' },
   ];
 
-  // Отдельные цвета для кромок (более насыщенные/темные варианты)
   const edgeColors = [
     { name: 'Темная сосна', value: '#C4A88A' },
     { name: 'Темный дуб', value: '#A67B4A' },
@@ -49,6 +72,13 @@ const ColorSelector: React.FC = () => {
     { name: 'Черный', value: '#2C2C2C' },
   ];
 
+  const handleDecorSelect = (decor: Decor | null) => {
+    setSelectedDecor(decor);
+    if (decor) {
+      setTopColor('#D4A574');
+    }
+  };
+
   return (
     <Container fluid className="color-selector-container">
       <Row className="h-100 g-0">
@@ -60,51 +90,33 @@ const ColorSelector: React.FC = () => {
                 Выбор цвета ДСП
               </h3>
 
-              <Form className="color-form">
-                <Form.Group className="mb-3">
-                  <Form.Label className="form-label">
-                    <span className="label-icon">⬆️</span>
-                    Цвет верха
-                  </Form.Label>
-                  <div className="d-flex align-items-center">
-                    <Form.Control
-                      type="color"
-                      value={topColor}
-                      onChange={(e) => setTopColor(e.target.value)}
-                      className="color-picker"
-                    />
-                    <Form.Control
-                      type="text"
-                      value={topColor}
-                      onChange={(e) => setTopColor(e.target.value)}
-                      className="ms-2 color-input"
-                      style={{ width: '120px' }}
-                    />
-                  </div>
-                </Form.Group>
+              {/* Выбор фото-декора */}
+              <div className="quick-colors-section">
+                <h5 className="section-title">
+                  <span className="section-icon">🖼️</span>
+                  Выбор фото-декора
+                </h5>
 
-                <Form.Group className="mb-3">
-                  <Form.Label className="form-label">
-                    <span className="label-icon">📐</span>
-                    Цвет боковины (кромок)
-                  </Form.Label>
-                  <div className="d-flex align-items-center">
-                    <Form.Control
-                      type="color"
-                      value={edgeColor}
-                      onChange={(e) => setEdgeColor(e.target.value)}
-                      className="color-picker"
-                    />
-                    <Form.Control
-                      type="text"
-                      value={edgeColor}
-                      onChange={(e) => setEdgeColor(e.target.value)}
-                      className="ms-2 color-input"
-                      style={{ width: '120px' }}
-                    />
-                  </div>
-                </Form.Group>
-              </Form>
+                <div className="decor-grid">
+                  {DECORS.map((decor) => (
+                    <button
+                      key={decor.id}
+                      onClick={() => handleDecorSelect(decor)}
+                      className={`decor-btn ${selectedDecor?.id === decor.id ? 'active' : ''}`}
+                    >
+                      <div 
+                        className="decor-thumbnail"
+                        style={{
+                          backgroundImage: `url(${decor.thumbnail || decor.image})`,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                        }}
+                      />
+                      <span className="decor-name">{decor.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <div className="quick-colors-section">
                 <h5 className="section-title">
@@ -118,7 +130,10 @@ const ColorSelector: React.FC = () => {
                       key={index}
                       className="quick-color-btn"
                       style={{ backgroundColor: wood.value }}
-                      onClick={() => setTopColor(wood.value)}
+                      onClick={() => {
+                        setTopColor(wood.value);
+                        if (selectedDecor) setSelectedDecor(null);
+                      }}
                       title={wood.name}
                     >
                       <span className="quick-color-tooltip">{wood.name}</span>
@@ -159,12 +174,18 @@ const ColorSelector: React.FC = () => {
                   </div>
                   <div className="color-preview-item">
                     <div className="color-preview" style={{ backgroundColor: edgeColor }} />
-                    <span className="color-label">Боковина</span>
+                    <span className="color-label">Кромка</span>
                   </div>
-                  <div className="color-preview-item">
-                    <div className="color-preview" style={{ backgroundColor: '#8B7D6B' }} />
-                    <span className="color-label">Низ (ДСП)</span>
-                  </div>
+                  {selectedDecor && (
+                    <div className="color-preview-item">
+                      <div className="color-preview decor-preview" style={{ 
+                        backgroundImage: `url(${selectedDecor.thumbnail})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                      }} />
+                      <span className="color-label">Декор</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card.Body>
@@ -175,6 +196,8 @@ const ColorSelector: React.FC = () => {
           <PlywoodViewer 
             topColor={topColor}
             edgeColor={edgeColor}
+            decorImage={selectedDecor?.image}
+            decorName={selectedDecor?.name}
           />
         </Col>
       </Row>
